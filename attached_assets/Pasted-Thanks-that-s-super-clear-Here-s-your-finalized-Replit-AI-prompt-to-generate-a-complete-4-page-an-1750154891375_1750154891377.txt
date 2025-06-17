@@ -1,0 +1,109 @@
+Thanks, that's super clear. Here's your finalized Replit AI prompt to generate a complete, 4-page animated React dashboard for your Telegram bot system — with data visualizations, chat console, Xendit balance integration, and a system maintenance panel.
+
+
+---
+
+🧠 Replit AI Prompt (Full 4-Page Telegram Bot Admin Dashboard):
+
+> Build a futuristic, mobile-responsive React dashboard using TypeScript, Tailwind CSS, and Vite. The frontend connects to a Telegram bot backend (e.g. https://tyangge24-7-1.onrender.com) and should have 4 animated pages, using Framer Motion, Recharts, and Lucide React.
+
+🔧 Tech Stack:
+
+React + TypeScript + Vite
+
+Tailwind CSS (utility-first design)
+
+Framer Motion (for animations)
+
+Recharts (for animated graphs)
+
+Axios (for API integration)
+
+Lucide React (for icons)
+
+
+✅ Pages:
+
+1. 📦 Dashboard (/dashboard) – Order Management
+
+View table of orders: Order No, Customer Name, Items, Delivery Info, Payment Status, Order Status
+
+Change order status using animated controls (Received → Preparing → Enroute → Delivered)
+
+View uploaded proof of payment from Telegram (image preview)
+
+Animated graphs:
+
+Orders per day (Bar Chart)
+
+Top categories (Pie Chart)
+
+Sales trend (Line Chart)
+
+
+Mobile-first layout and swipe transitions
+
+
+
+2. 💬 Chat Console (/messages) – Inbox Hub
+
+Placeholder for Telegram and Messenger messages
+
+Display list of incoming chats (dummy data ok)
+
+Use Framer Motion to animate message panels
+
+
+
+3. 💳 Xendit Panel (/xendit) – Payments & Balance
+
+Call backend API (e.g. /api/xendit/balance) to show current Xendit account balance
+
+Option to initiate withdrawal (trigger backend call)
+
+Include animated wallet card UI
+
+Chart for daily transactions
+
+
+
+4. ⚙️ Maintenance (/system) – Bot & System Tools
+
+Show system uptime, webhook status
+
+Option to restart bot (via API)
+
+Show version, build info
+
+Animate system diagnostics using loading bars or icons
+
+
+
+
+✨ UX Notes:
+
+Use side navigation or tabbed bottom navbar for mobile
+
+Add dark mode
+
+Add Framer Motion for:
+
+Page transitions
+
+Chart reveals
+
+Button feedback
+
+
+Make it swipe-friendly on mobile
+
+
+📌 QR generation and payments are handled by the backend — no upload UI needed.
+
+
+
+
+---
+
+Would you like me to now build this full frontend for you, starting with the folder structure and basic page layout?
+
