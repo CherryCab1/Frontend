@@ -1,83 +1,32 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  ShoppingCart, 
-  DollarSign, 
-  Users, 
-  TrendingUp, 
-  RefreshCw,
-  Eye,
-  Filter
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
+import {
+  RefreshCw, Users, ShoppingCart, DollarSign, Filter, Eye,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart, Tooltip } from "recharts";
-import type { Order } from "@shared/schema";
-import type { DashboardStats } from "@/lib/types";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0 }
-};
+import {
+  Card, CardContent,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Button, Input
+} from "@/components/ui"; // Update these paths as needed
+import { containerVariants, itemVariants } from "@/lib/animations";
+import useDashboardData from "@/hooks/useDashboardData";
 
 export default function Dashboard() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [searchFilter, setSearchFilter] = useState<string>("");
-
-  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats"],
-  });
-
-  const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
-    queryKey: ["/api/orders"],
-  });
-
-  const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
-      const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      toast({
-        title: "Order Updated",
-        description: "Order status has been updated successfully.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update order status.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const refreshData = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-    toast({
-      title: "Data Refreshed",
-      description: "Dashboard data has been refreshed.",
-    });
-  };
+  const {
+    stats,
+    orders,
+    statsLoading,
+    ordersLoading,
+    searchFilter,
+    statusFilter,
+    setSearchFilter,
+    setStatusFilter,
+    refreshData,
+    updateOrderStatusMutation,
+  } = useDashboardData();
 
   if (statsLoading || ordersLoading) {
     return (
@@ -104,10 +53,9 @@ export default function Dashboard() {
     sales: value || 0
   })) || [];
 
-  // Filter orders based on status and search
   const filteredOrders = orders?.filter(order => {
     const matchesStatus = statusFilter === "all" || order.orderStatus === statusFilter || order.paymentStatus === statusFilter;
-    const matchesSearch = searchFilter === "" || 
+    const matchesSearch = searchFilter === "" ||
       order.customerName.toLowerCase().includes(searchFilter.toLowerCase()) ||
       order.orderNo.toLowerCase().includes(searchFilter.toLowerCase()) ||
       order.items.toLowerCase().includes(searchFilter.toLowerCase());
@@ -115,14 +63,14 @@ export default function Dashboard() {
   }) || [];
 
   return (
-    <motion.div 
+    <motion.div
       className="p-4 md:p-8 space-y-8"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Header */}
-      <motion.div 
+      <motion.div
         className="flex flex-col md:flex-row md:items-center justify-between"
         variants={itemVariants}
       >
@@ -142,50 +90,15 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* Compact Stats Row */}
+      {/* Stats Cards */}
       <motion.div variants={itemVariants}>
         <Card className="glass border-0 stat-glow">
           <CardContent className="p-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-orange-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Pending Users</p>
-                  <p className="text-lg font-bold">{stats?.pendingUsers}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Pending Orders</p>
-                  <p className="text-lg font-bold">{stats?.pendingOrders}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Orders</p>
-                  <p className="text-lg font-bold">{stats?.totalOrders}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Revenue</p>
-                  <p className="text-lg font-bold">{stats?.revenue}</p>
-                </div>
-              </div>
+              <StatCard icon={<Users className="w-5 h-5 text-orange-400" />} label="Pending Users" value={stats?.pendingUsers} color="bg-orange-500/20" />
+              <StatCard icon={<ShoppingCart className="w-5 h-5 text-yellow-400" />} label="Pending Orders" value={stats?.pendingOrders} color="bg-yellow-500/20" />
+              <StatCard icon={<ShoppingCart className="w-5 h-5 text-primary" />} label="Total Orders" value={stats?.totalOrders} color="bg-primary/20" />
+              <StatCard icon={<DollarSign className="w-5 h-5 text-green-400" />} label="Revenue" value={stats?.revenue} color="bg-green-500/20" />
             </div>
           </CardContent>
         </Card>
@@ -195,85 +108,46 @@ export default function Dashboard() {
       <motion.div variants={itemVariants}>
         <Card className="glass border-0 card-glow">
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 space-y-4 md:space-y-0">
-              <h3 className="text-lg font-semibold">Recent Orders ({filteredOrders.length})</h3>
-              <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Filter className="w-4 h-4" />
-                  <Input 
-                    placeholder="Search orders..." 
-                    value={searchFilter}
-                    onChange={(e) => setSearchFilter(e.target.value)}
-                    className="w-48 h-8 text-sm"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32 h-8 text-sm bg-card border-muted">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="received">Received</SelectItem>
-                    <SelectItem value="preparing">Preparing</SelectItem>
-                    <SelectItem value="enroute">En Route</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="ghost" className="text-primary hover:text-primary/80 text-sm h-8">
-                  View All
-                </Button>
-              </div>
-            </div>
-            
+            <OrderFilters
+              searchFilter={searchFilter}
+              setSearchFilter={setSearchFilter}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              count={filteredOrders.length}
+            />
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-muted">
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Order No</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Telegram User</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Items</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Amount</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Payment</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Status</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Date</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Actions</th>
+                    {['Order No', 'Telegram User', 'Items', 'Amount', 'Payment', 'Status', 'Date', 'Actions'].map((title) => (
+                      <th key={title} className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">{title}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-muted">
-                  {filteredOrders?.map((order) => (
-                    <motion.tr 
+                  {filteredOrders?.map(order => (
+                    <motion.tr
                       key={order.id}
                       className="hover:bg-muted/50 transition-colors"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <td className="py-3 px-3">
-                        <span className="font-mono text-xs">{order.orderNo}</span>
-                      </td>
+                      <td className="py-3 px-3"><span className="font-mono text-xs">{order.orderNo}</span></td>
                       <td className="py-3 px-3">
                         <div className="flex items-center space-x-2">
                           <div className="w-6 h-6 bg-gradient-to-r from-primary to-[hsl(280,89%,68%)] rounded-full flex items-center justify-center">
-                            <span className="text-xs font-semibold text-white">
-                              {order.customerInitials}
-                            </span>
+                            <span className="text-xs font-semibold text-white">{order.customerInitials}</span>
                           </div>
                           <span className="text-xs truncate max-w-24">{order.customerName}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-3">
-                        <span className="text-xs truncate max-w-32 block">{order.items}</span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="text-xs font-medium">
-                          ${order.amount || order.total || '0.00'}
-                        </span>
-                      </td>
+                      <td className="py-3 px-3"><span className="text-xs truncate max-w-32 block">{order.items}</span></td>
+                      <td className="py-3 px-3"><span className="text-xs font-medium">${order.amount || order.total || '0.00'}</span></td>
                       <td className="py-3 px-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          order.paymentStatus === 'paid' 
+                          order.paymentStatus === 'paid'
                             ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                             : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
                         }`}>
@@ -283,7 +157,7 @@ export default function Dashboard() {
                       <td className="py-3 px-3">
                         <Select
                           value={order.orderStatus}
-                          onValueChange={(value) => 
+                          onValueChange={(value) =>
                             updateOrderStatusMutation.mutate({ orderId: order.id, status: value })
                           }
                         >
@@ -304,11 +178,7 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td className="py-3 px-3">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="text-primary hover:text-primary/80 h-6 w-6 p-0"
-                        >
+                        <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 h-6 w-6 p-0">
                           <Eye className="w-3 h-3" />
                         </Button>
                       </td>
@@ -321,7 +191,7 @@ export default function Dashboard() {
         </Card>
       </motion.div>
 
-      {/* Charts Section */}
+      {/* Charts */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Orders Chart */}
         <motion.div variants={itemVariants}>
@@ -331,33 +201,15 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.3} />
-                  <XAxis 
-                    dataKey="day" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      fontSize: "12px"
-                    }}
-                  />
-                  <Bar 
-                    dataKey="orders" 
-                    fill="hsl(var(--primary))" 
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  />
+                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    fontSize: "12px"
+                  }} />
+                  <Bar dataKey="orders" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -370,13 +222,10 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-4">Top Categories</h3>
               <div className="space-y-4">
-                {stats?.topCategories.map((category) => (
+                {stats?.topCategories.map(category => (
                   <div key={category.name} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div 
-                        className="w-4 h-4 rounded" 
-                        style={{ backgroundColor: category.color }}
-                      />
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: category.color }} />
                       <span>{category.name}</span>
                     </div>
                     <span className="font-semibold">{category.percentage}%</span>
@@ -387,62 +236,36 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
-        {/* Interactive Sales Analytics */}
+        {/* Sales Analytics */}
         <motion.div variants={itemVariants}>
           <Card className="glass border-0 card-glow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Sales Analytics</h3>
                 <div className="flex space-x-2">
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    7D
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-xs bg-primary/20 text-primary">
-                    30D
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    90D
-                  </Button>
+                  <Button variant="ghost" size="sm" className="text-xs">7D</Button>
+                  <Button variant="ghost" size="sm" className="text-xs bg-primary/20 text-primary">30D</Button>
+                  <Button variant="ghost" size="sm" className="text-xs">90D</Button>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-card/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Total Revenue</p>
-                  <p className="text-xl font-bold text-green-400">$12,847</p>
-                  <p className="text-xs text-green-400">+23.5% vs last month</p>
-                </div>
-                <div className="bg-card/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Avg Order Value</p>
-                  <p className="text-xl font-bold text-blue-400">$68.20</p>
-                  <p className="text-xs text-blue-400">+12.1% vs last month</p>
-                </div>
+                <StatBox title="Total Revenue" value="$12,847" color="text-green-400" note="+23.5% vs last month" />
+                <StatBox title="Avg Order Value" value="$68.20" color="text-blue-400" note="+12.1% vs last month" />
               </div>
 
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.2} />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `$${value/1000}k`}
-                  />
-                  <Tooltip 
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--primary))",
@@ -459,9 +282,9 @@ export default function Dashboard() {
                     stroke="hsl(var(--primary))"
                     strokeWidth={3}
                     dot={false}
-                    activeDot={{ 
-                      r: 6, 
-                      stroke: "hsl(var(--primary))", 
+                    activeDot={{
+                      r: 6,
+                      stroke: "hsl(var(--primary))",
                       strokeWidth: 3,
                       fill: "hsl(var(--background))"
                     }}
@@ -473,5 +296,63 @@ export default function Dashboard() {
         </motion.div>
       </div>
     </motion.div>
+  );
+}
+
+// ⬇️ Subcomponents
+function StatCard({ icon, label, value, color }: any) {
+  return (
+    <div className="flex items-center space-x-3">
+      <div className={`w-10 h-10 ${color} rounded-lg flex items-center justify-center`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-lg font-bold">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function OrderFilters({ searchFilter, setSearchFilter, statusFilter, setStatusFilter, count }: any) {
+  return (
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 space-y-4 md:space-y-0">
+      <h3 className="text-lg font-semibold">Recent Orders ({count})</h3>
+      <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
+        <div className="flex items-center space-x-2">
+          <Filter className="w-4 h-4" />
+          <Input
+            placeholder="Search orders..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="w-48 h-8 text-sm"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-32 h-8 text-sm bg-card border-muted">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="received">Received</SelectItem>
+            <SelectItem value="preparing">Preparing</SelectItem>
+            <SelectItem value="enroute">En Route</SelectItem>
+            <SelectItem value="delivered">Delivered</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+function StatBox({ title, value, color, note }: any) {
+  return (
+    <div className="bg-card/50 rounded-lg p-3">
+      <p className="text-xs text-muted-foreground">{title}</p>
+      <p className={`text-xl font-bold ${color}`}>{value}</p>
+      <p className={`text-xs ${color}`}>{note}</p>
+    </div>
   );
 }
